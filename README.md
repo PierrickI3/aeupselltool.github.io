@@ -1,0 +1,12 @@
+# PureCloud GDPR Requests App
+
+This application leverages AWS Lambda functions to gather information about PureCloud customers
+
+## Installation
+
+* Clone this repository
+* Run `npm install`
+* Start a web server (`start.cmd` uses Python)
+* Browse to http://localhost:8080
+
+## Known issues/limitations/TODOs

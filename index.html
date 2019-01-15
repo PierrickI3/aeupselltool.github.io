@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no">
+  <meta name="theme-color" content="#000000">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/node_modules/bootstrap/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+  <link rel="stylesheet" href="/node_modules/jquery-toast-plugin/dist/jquery.toast.min.css">
+  <link rel="stylesheet" href="/node_modules/bootstrap-datepicker/dist/css/bootstrap-datepicker3.standalone.min.css">
+  <title>Genesys AE UpSell Tool</title>
+  <link href="/static/css/index.css" rel="stylesheet">
+</head>
+
+<body>
+  <noscript>You need to enable JavaScript to run this app.</noscript>
+
+  <!--#region Navbar -->
+
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav mr-auto">
+        <li class="nav-item active">
+          <a class="nav-link" href="/">New Request</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <!--#endregion -->
+
+  <!--#region New Request Form -->
+
+  <div class="container mt-2">
+    <div>
+      <h6 class="text-center">New Request</h6>
+      <hr />
+    </div>
+
+    <small class="form-text text-muted text-center">Populate all fields below</small><br />
+    <div class="form-group">
+      <label for="clientId">Client Id</label>
+      <input type="text" class="form-control" id="clientId" placeholder="Enter your client id" value="489d03cb-e7c5-4f62-8fdb-b391d9b70ce6">
+    </div>
+    <div class="form-group">
+      <label for="clientSecret">Client Secret</label>
+      <input type="password" class="form-control" id="clientSecret" placeholder="Enter your client secret" value="cvlV1EAkNZGTM6WavqIRhCOKMowmyGp6qEZciW0bTcs">
+    </div>
+    <div class="form-group">
+      <label for="environment">PureCloud Environment</label>
+      <select class="form-control" id="environment">
+        <option value="mypurecloud.ie" selected>mypurecloud.ie (Ireland)</option>
+        <option value="mypurecloud.com">mypurecloud.com (US)</option>
+        <option value="mypurecloud.de">mypurecloud.de (Germany)</option>
+        <option value="mypurecloud.com.au">mypurecloud.com.au (Australia/New Zealand)</option>
+        <option value="mypurecloud.jp">mypurecloud.jp (Japan)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="startDate">Start Date</label><small> (limited to the past 7 days)</small>
+      <input data-provide="datepicker" class="form-control" id="startDate">
+    </div>
+    <div class="form-group">
+      <label for="duration">Duration</label><small> (max = 7 days)</small>
+      <input type="number" class="form-control" min="1" max="7" id="duration" value="1">
+    </div>
+    <div class="form-group">
+      <label for="emailAddress">Email Address</label>
+      <input type="email" class="form-control" id="emailAddress" placeholder="Enter your email address so we can let you know when the report is ready">
+    </div>
+    <div class="float-right">
+      <button id="testConnection" type="button" class="btn btn-info">Test Connection</button>
+      <button id="submitRequest" disabled type="submit" class="btn btn-primary">Submit Request</button>
+    </div>
+  </div>
+
+  <!--#endregion -->
+
+  <script src="/node_modules/jquery/dist/jquery.min.js"></script>
+  <script src="/node_modules/popper.js/dist/umd/popper.min.js"></script>
+  <script src="/node_modules/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="/node_modules/jquery-toast-plugin/dist/jquery.toast.min.js"></script>
+  <script src="/node_modules/bootstrap-datepicker/dist/js/bootstrap-datepicker.min.js"></script>
+  <script src="/static/js/notifications.js"></script>
+  <script src="/static/js/aws.js"></script>
+
+  <script>
+
+    // Activate bootstrap tooltips (https://getbootstrap.com/docs/4.1/components/tooltips/)
+    $("[data-toggle='tooltip']").tooltip();
+
+    // Initialize DatePicker control (https://bootstrap-datepicker.readthedocs.io/en/latest/)
+    $("#startDate").datepicker({
+      format: "yyyy/mm/dd",
+      startDate: "-6d",     // Limit to today and the last 6 days
+      endDate: "+0d",       // No future dates
+      autoclose: true,      // Close after selecting date
+      weekStart: 1          // weeks start on Mondays
+    });
+
+    // Test Connection Button
+    $("#testConnection").click(() => {
+      testPureCloudConnection($("#clientId").val(), $("#clientSecret").val(), $("#environment").children("option:selected").val())
+        .then((token) => {
+          $("#submitRequest").removeAttr("disabled");
+          showMessage("Click on 'Submit Request' to continue");
+        }).catch((error) => {
+          $("#submitRequest").attr("disabled", true);
+          showMessage(error, true);
+        });
+    });
+
+    // Generate a UUID
+    function uuidv4() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
+    // Submit Request
+    $("#submitRequest").click(() => {
+      var clientId = $("#clientId").val();
+      var clientSecret = $("#clientSecret").val();
+      var environment = $("#environment").children("option:selected").val();
+      var startDate = $("#startDate").val();
+      var duration = $("#duration").val();
+      var emailAddress = $("#emailAddress").val();
+      var uuid = uuidv4();
+
+      console.log('Submitting Request...');
+      console.log(`client id: ${clientId}`);
+      console.log(`client secret: ${clientSecret}`);
+      console.log(`environment: ${environment}`);
+      console.log(`start date: ${startDate}`);
+      console.log(`duration: ${duration}`);
+      console.log(`email address: ${emailAddress}`);
+      console.log(`task id: ${uuid}`);
+
+      submitRequest(clientId, clientSecret, environment, startDate, duration, emailAddress, uuid)
+        .then((token) => {
+          showMessage("Request submitted. Thank you!");
+        }).catch((error) => {
+          showMessage(error, true);
+        });
+    });
+
+  </script>
+</body>
+
+</html>

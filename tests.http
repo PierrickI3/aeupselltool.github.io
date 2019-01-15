@@ -1,0 +1,5 @@
+
+// GET /request
+GET https://rco60s22e3.execute-api.eu-west-1.amazonaws.com/DEV/request?name=86993f94-7f86-4ea0-bce5-4cef5b497aa9
+Content-Type: : application/json
+x-api-key: CovgPVCcHJ60ZGtdGCdMqaCC28qKVW0M1MYm2Qhs
