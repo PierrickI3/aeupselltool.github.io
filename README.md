@@ -10,3 +10,6 @@ This application leverages AWS Lambda functions to gather information about Pure
 * Browse to http://localhost:8080
 
 ## Known issues/limitations/TODOs
+
+* Email is not yet supported
+* Task ids are not shown when requests are being submitted
