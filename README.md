@@ -1,4 +1,4 @@
-# PureCloud GDPR Requests App
+# PureCloud AE Upsell tool
 
 This application leverages AWS Lambda functions to gather information about PureCloud customers
 
